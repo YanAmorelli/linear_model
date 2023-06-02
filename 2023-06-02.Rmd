@@ -1,0 +1,102 @@
+---
+title: "Multicoliniaridade"
+author: "Yanzin"
+date: "2023-06-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+-   Matriz de correlação  
+## VIF (Fator de inflação de variância)
+
+$VIF_j = \frac{1}{1 - R^2_j}$ em que $R^2_j$ é o coeficiente de determinação da regressão de $X_j$ pelas outras variáveis explicativas.
+
+-   Número de condição $A\vec{x} = \lambda\vec{x}$ x != 0\
+    A matriz KxK
+
+-\> $\lambda$: Autovalor\
+-\> $\vec{x}$: Autovetor
+
+detA = 0 \<-\> Ao menos um autovalor é nulo detA próximo 0 \<-\> Ao menos um autovalor é próximo de 0
+
+matriz $X^t*X$ $(p+1-1)*(p+1)$\
+autovalores: $\lambda_1, \lambda_2, ..., \lambda_{p+1}$\
+
+
+## Número de condição:
+
+$CN = \frac{\lambda_{max}}{\lambda_{min}}$
+
+Se $cn > 1000$, há problema de multicoliniaridade severa;\
+Se $100 < cn < 1000$, há multicoliniaridade moderada;\
+Se $cn < 100$ não há multicoliniaridade
+
+```{r}
+mtcars
+
+x = matrix(1, 32, 11)
+for (i in 1:32) {
+  for (j in 2:11) {
+    x[i,j] = mtcars[i,j]
+  }
+}
+x
+autovalores = eigen(t(x)%*%x)
+cn = max(autovalores$values)/min(autovalores$values)
+```
+
+Calculando VIF
+
+```{r}
+modelo=lm(mpg~cyl+disp+hp+drat+wt+qsec+vs+am+gear+carb, data=mtcars)
+summary(modelo)
+
+library(car)
+vif(modelo)
+```
+
+Removendo a variável com maior VIF (disp)
+
+```{r}
+modelo=lm(mpg~cyl+hp+drat+wt+qsec+vs+am+gear+carb, data=mtcars)
+summary(modelo)
+vif(modelo)
+```
+
+Removendo a variável com maior VIF (cyl)
+
+```{r}
+modelo=lm(mpg~hp+drat+wt+qsec+vs+am+gear+carb, data=mtcars)
+summary(modelo)
+vif(modelo)
+```
+
+
+## Análise de pontos influentes
+Ponto influente: Ponto cuja mudança de valor ou exclusão altera substancialmente
+o ajuste do modelo de regressão.
+
+### DFFIT
+
+$DFFIT_{(i)} = \frac{\hat{Y_i}-\hat{Y}(i)}{\sqrt{QM_{res}h_{ii}}}$ em que  
+
+$\hat{Y_i}$: valor ajustado do modelo considerando todos os dados  
+
+$\hat{Y{(i)}}$: valor ajustado da i-ésima observação no modelo que essa observação é omitida  
+
+$QM_{res}$: Quadrado médio dos resíduos do modelo sem a i-ésima observação  
+
+$h_{ii}$: i-ésimo elemento da diagonal de  
+
+$H = X(X^tX)X^T$ considerando o ponto infliente se $DFFIT > 2 \sqrt{\frac{p+1}{n}}$
+
+### Distância de Cook
+
+$D_i = \frac{(\hat{\vec{Y}} - \hat{\vec{Y_{(i)}}})^T (\hat{\vec{Y}} - \hat{\vec{Y_{(i)}}})}{p^{QM_{res}}}$ em que  
+
+$\hat{\vec{Y}}$: Vetor da resposta ajustada pelo modelo original
+
+$\hat{\vec{Y_{(i)}}}$: Vetor da resposta ajustada pelo modelo estimado sem  i-ésima observação.
